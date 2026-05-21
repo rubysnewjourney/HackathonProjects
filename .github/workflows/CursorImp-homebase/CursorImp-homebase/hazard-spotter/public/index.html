@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Site Hazard Spotter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="brand">
+      <div class="brand-icon" aria-hidden="true">⛑️</div>
+      <h1>Site Hazard Spotter</h1>
+      <p>Pick a job site photo. Get a professional safety brief in 10 seconds.</p>
+    </header>
+
+    <section id="screen-landing" class="screen">
+      <div class="card">
+        <div class="source-tabs" role="tablist">
+          <button type="button" class="tab active" data-source="stock">Stock Sites</button>
+          <button type="button" class="tab" data-source="random">Random Site</button>
+          <button type="button" class="tab" data-source="ai">AI Scenario + Image</button>
+        </div>
+
+        <div id="panel-stock">
+          <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem;">
+            Curated construction photos — no upload required. Select a site, then analyze.
+          </p>
+          <div id="stock-grid" class="stock-grid"></div>
+        </div>
+
+        <div id="panel-random" class="hidden">
+          <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem;">
+            Pull a random real construction image from our verified stock library.
+          </p>
+          <button type="button" class="btn btn-secondary" id="btn-pick-random">Pick Random Site</button>
+        </div>
+
+        <div id="panel-ai" class="hidden">
+          <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1rem;">
+            Multi-agent pipeline designs a hazardous scenario, generates a photorealistic site image, then inspects it.
+          </p>
+          <button type="button" class="btn btn-secondary" id="btn-generate-ai">Generate AI Hazard Scenario</button>
+          <p class="ai-scenario-note">Uses Claude for scenario design + Pollinations for image synthesis.</p>
+        </div>
+
+        <div id="preview-panel" class="preview-panel hidden">
+          <img id="preview-img" alt="Selected job site" />
+          <div class="preview-meta">
+            <strong id="preview-title">—</strong>
+            <span id="preview-source"></span>
+            <div class="agent-pills" id="agent-pills"></div>
+          </div>
+        </div>
+
+        <div id="landing-error" class="error-banner hidden"></div>
+
+        <div class="btn-row" style="margin-top:1rem;">
+          <button type="button" class="btn btn-primary" id="btn-analyze" disabled>
+            Analyze for Hazards
+          </button>
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--muted);">
+            <input type="checkbox" id="demo-fallback" />
+            Demo mode (cached results)
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-analysis" class="screen hidden">
+      <div class="card">
+        <div class="scan-wrap">
+          <img id="scan-img" alt="Analyzing" />
+          <div class="scan-line" aria-hidden="true"></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <ul class="status-lines" id="status-lines">
+          <li>Reading site conditions...</li>
+          <li>Checking fall protection...</li>
+          <li>Reviewing PPE compliance...</li>
+          <li>Identifying equipment hazards...</li>
+          <li>Generating safety brief...</li>
+        </ul>
+        <div class="agent-status-grid" id="agent-status-grid"></div>
+      </div>
+    </section>
+
+    <section id="screen-results" class="screen hidden">
+      <div class="card">
+        <div class="results-header">
+          <div>
+            <div class="summary-bar" id="summary-bar">—</div>
+            <div class="summary-counts" id="summary-counts"></div>
+            <div class="timestamp" id="result-timestamp"></div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn btn-secondary" id="btn-new-scan">New Scan</button>
+            <button type="button" class="btn btn-primary" id="btn-download">Download Report</button>
+          </div>
+        </div>
+
+        <div id="results-error" class="error-banner hidden"></div>
+
+        <div class="results-layout">
+          <div class="results-photo">
+            <img id="results-img" alt="Analyzed site" />
+          </div>
+          <div id="hazard-list" class="hazard-list"></div>
+        </div>
+
+        <p class="disclaimer">
+          This report is an AI-assisted visual analysis tool and does not constitute a formal OSHA inspection or legal compliance certification. Always verify findings with a qualified safety professional before work begins.
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+  <script src="/js/app.js" type="module"></script>
+</body>
+</html>

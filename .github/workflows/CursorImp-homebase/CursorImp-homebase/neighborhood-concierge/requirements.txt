@@ -1,0 +1,16 @@
+anthropic>=0.25.0
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+langchain>=0.1.0
+langchain-text-splitters
+playwright
+feedparser
+requests
+python-dotenv
+schedule
+geopy
+fastapi
+uvicorn
+pytz
+python-multipart
+rocketride>=1.0.6

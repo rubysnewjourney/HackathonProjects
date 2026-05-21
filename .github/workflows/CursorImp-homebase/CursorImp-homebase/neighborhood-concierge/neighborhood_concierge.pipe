@@ -1,0 +1,356 @@
+{
+  "project_id": "neighborhood-concierge-v2",
+  "components": [
+    {
+      "id": "eventbrite_source",
+      "provider": "dropper",
+      "config": {
+        "hideForm": false,
+        "mode": "Source",
+        "label": "Eventbrite API",
+        "description": "Pulls local events from Eventbrite REST API every 6h",
+        "parameters": {
+          "source_type": "api",
+          "endpoint": "https://www.eventbriteapi.com/v3/events/search/",
+          "auth_header": "Authorization: Bearer ${EVENTBRITE_API_KEY}",
+          "query_params": {
+            "location.address": "${USER_CITY}",
+            "location.within": "25km",
+            "expand": "venue,category",
+            "start_date.range_start": "${NOW}",
+            "start_date.range_end": "${NOW_PLUS_7_DAYS}"
+          },
+          "schedule": "0 */6 * * *"
+        },
+        "type": "dropper"
+      },
+      "ui": {
+        "position": { "x": 80, "y": 60 },
+        "measured": { "width": 170, "height": 100 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "meetup_source",
+      "provider": "dropper",
+      "config": {
+        "hideForm": false,
+        "mode": "Source",
+        "label": "Meetup public find",
+        "description": "Scrapes Meetup find-events page (zip 98101) — no API key",
+        "parameters": {
+          "source_type": "scraper",
+          "target_url": "https://www.meetup.com/find/events/?allMeetups=true&zip=98101",
+          "schedule": "0 */6 * * *"
+        },
+        "type": "dropper"
+      },
+      "ui": {
+        "position": { "x": 270, "y": 60 },
+        "measured": { "width": 170, "height": 100 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "luma_source",
+      "provider": "dropper",
+      "config": {
+        "hideForm": false,
+        "mode": "Source",
+        "label": "Luma Scraper",
+        "description": "Scrapes lu.ma/seattle for upcoming local events via Playwright",
+        "parameters": {
+          "source_type": "scraper",
+          "scraper_engine": "playwright",
+          "target_url": "https://lu.ma/${CITY_SLUG}",
+          "selectors": {
+            "event_list": "[data-testid='event-card']",
+            "title": "h2",
+            "date": "[data-testid='event-date']",
+            "location": "[data-testid='event-location']",
+            "url": "a[href]"
+          },
+          "schedule": "0 */6 * * *"
+        },
+        "type": "dropper"
+      },
+      "ui": {
+        "position": { "x": 460, "y": 60 },
+        "measured": { "width": 170, "height": 100 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "reddit_source",
+      "provider": "dropper",
+      "config": {
+        "hideForm": false,
+        "mode": "Source",
+        "label": "Reddit RSS",
+        "description": "Pulls r/Seattle and r/SeattleEvents RSS for social signal on events",
+        "parameters": {
+          "source_type": "rss",
+          "feeds": [
+            "https://www.reddit.com/r/Seattle/search.rss?q=event&sort=new&t=week",
+            "https://www.reddit.com/r/SeattleEvents/.rss"
+          ],
+          "schedule": "0 */6 * * *"
+        },
+        "type": "dropper"
+      },
+      "ui": {
+        "position": { "x": 650, "y": 60 },
+        "measured": { "width": 170, "height": 100 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "normalize_dedup",
+      "provider": "parse",
+      "config": {
+        "label": "Ingest, normalize & deduplicate",
+        "description": "Unify schema across all sources; dedup by SHA-256(title+date+location); enrich with lat/lng via geocoder",
+        "schema": {
+          "id": "uuid",
+          "title": "string",
+          "source": "eventbrite|meetup|luma|reddit",
+          "date_start": "ISO8601",
+          "location": { "address": "string", "lat": "float", "lng": "float" },
+          "category": "music|food|tech|sports|arts|community|other",
+          "price": "float|null",
+          "url": "string",
+          "description": "string",
+          "tags": "string[]"
+        },
+        "dedup_key": "SHA256(title + date_start + location.address)",
+        "geocoder": "nominatim"
+      },
+      "ui": {
+        "position": { "x": 80, "y": 220 },
+        "measured": { "width": 760, "height": 80 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        { "lane": "tags", "from": "eventbrite_source" },
+        { "lane": "tags", "from": "meetup_source" },
+        { "lane": "tags", "from": "luma_source" },
+        { "lane": "tags", "from": "reddit_source" }
+      ]
+    },
+    {
+      "id": "preprocessor_langchain_1",
+      "provider": "preprocessor_langchain",
+      "config": {
+        "label": "LangChain text preprocessor",
+        "profile": "default",
+        "default": {
+          "mode": "strlen",
+          "splitter": "RecursiveCharacterTextSplitter",
+          "chunk_size": 512,
+          "chunk_overlap": 64,
+          "metadata_fields": ["event_id", "source", "date_start", "category", "price", "location"]
+        }
+      },
+      "ui": {
+        "position": { "x": 80, "y": 360 },
+        "measured": { "width": 380, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [{ "lane": "text", "from": "normalize_dedup" }]
+    },
+    {
+      "id": "embedding_transformer_1",
+      "provider": "embedding_transformer",
+      "config": {
+        "label": "miniLM embedder",
+        "profile": "miniLM",
+        "model": "all-MiniLM-L6-v2",
+        "dimensions": 384,
+        "note": "Embeds both event documents and live user queries"
+      },
+      "ui": {
+        "position": { "x": 490, "y": 360 },
+        "measured": { "width": 350, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        { "lane": "documents", "from": "preprocessor_langchain_1" },
+        { "lane": "questions", "from": "chat_1" }
+      ]
+    },
+    {
+      "id": "chroma_1",
+      "provider": "chroma",
+      "config": {
+        "label": "ChromaDB — NEIGHBORHOOD_EVENTS",
+        "profile": "local",
+        "local": {
+          "collection": "NEIGHBORHOOD_EVENTS",
+          "host": "localhost",
+          "port": 8330
+        },
+        "cloud": {
+          "collection": "NEIGHBORHOOD_EVENTS",
+          "port": 443
+        },
+        "retrieval": {
+          "top_k": 8,
+          "metadata_filters": ["date_start", "category", "price", "location.lat", "location.lng"]
+        }
+      },
+      "ui": {
+        "position": { "x": 80, "y": 510 },
+        "measured": { "width": 760, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        { "lane": "documents", "from": "embedding_transformer_1" },
+        { "lane": "questions", "from": "embedding_transformer_1" }
+      ]
+    },
+    {
+      "id": "user_profile",
+      "provider": "dropper",
+      "config": {
+        "hideForm": false,
+        "mode": "Source",
+        "label": "User profile store",
+        "description": "Persists user preferences: neighborhood, interests, price sensitivity, opt-in schedule",
+        "parameters": {
+          "source_type": "kv_store",
+          "schema": {
+            "phone": "string",
+            "city": "string",
+            "neighborhood": "string",
+            "interests": "string[]",
+            "max_price": "float|null",
+            "digest_time": "HH:MM",
+            "timezone": "string"
+          }
+        },
+        "type": "dropper"
+      },
+      "ui": {
+        "position": { "x": 80, "y": 660 },
+        "measured": { "width": 200, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "rank_filter",
+      "provider": "preprocessor_langchain",
+      "config": {
+        "label": "Rank & filter",
+        "description": "Score retrieved events by recency, distance from user, category match, price fit. Keep top 5.",
+        "profile": "custom",
+        "custom": {
+          "mode": "rank",
+          "scoring_weights": {
+            "recency": 0.35,
+            "distance_km": 0.30,
+            "category_match": 0.25,
+            "price_fit": 0.10
+          },
+          "top_n": 5
+        }
+      },
+      "ui": {
+        "position": { "x": 310, "y": 660 },
+        "measured": { "width": 230, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        { "lane": "documents", "from": "chroma_1" },
+        { "lane": "profile", "from": "user_profile" }
+      ]
+    },
+    {
+      "id": "chat_1",
+      "provider": "chat",
+      "config": {
+        "hideForm": true,
+        "mode": "Source",
+        "label": "User query / Photon reply",
+        "description": "Receives incoming WhatsApp/SMS messages routed from Photon",
+        "parameters": {},
+        "type": "chat"
+      },
+      "ui": {
+        "position": { "x": 565, "y": 660 },
+        "measured": { "width": 200, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      }
+    },
+    {
+      "id": "llm_anthropic_1",
+      "provider": "llm_anthropic",
+      "config": {
+        "label": "Claude — neighborhood concierge brain",
+        "profile": "claude-sonnet-4-6",
+        "claude-sonnet-4-6": {
+          "system_prompt": "You are a friendly, knowledgeable neighborhood concierge. You surface local events that match the user's interests. Tone: warm, conversational, brief. Use 1-2 relevant emojis per message. Always include direct event links. Group events by day when generating a digest. If the user asks a follow-up question, answer from the retrieved event context only — do not invent events.",
+          "max_tokens": 1024,
+          "temperature": 0.7
+        }
+      },
+      "ui": {
+        "position": { "x": 80, "y": 810 },
+        "measured": { "width": 760, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [
+        { "lane": "questions", "from": "chroma_1" },
+        { "lane": "context", "from": "rank_filter" },
+        { "lane": "profile", "from": "user_profile" }
+      ]
+    },
+    {
+      "id": "response_answers_1",
+      "provider": "response_answers",
+      "config": {
+        "label": "Photon delivery",
+        "laneName": "answers",
+        "description": "Routes Claude's response to Photon for WhatsApp/SMS dispatch",
+        "delivery": {
+          "primary": "imessage",
+          "fallback": "rcs_sms",
+          "provider": "photon_spectrum",
+          "schedule_digest": "08:00",
+          "timezone_field": "user_profile.timezone"
+        }
+      },
+      "ui": {
+        "position": { "x": 80, "y": 960 },
+        "measured": { "width": 760, "height": 84 },
+        "nodeType": "default",
+        "formDataValid": true
+      },
+      "input": [{ "lane": "answers", "from": "llm_anthropic_1" }]
+    }
+  ],
+  "viewport": { "x": -60, "y": -40, "zoom": 0.85 },
+  "version": 2,
+  "docRevision": 1,
+  "source": "eventbrite_source",
+  "metadata": {
+    "project_name": "Neighborhood Concierge",
+    "description": "Local event discovery pipeline with RAG, personalization, and WhatsApp/SMS delivery",
+    "city": "Seattle",
+    "vector_collection": "NEIGHBORHOOD_EVENTS",
+    "llm": "claude-sonnet-4-6",
+    "embedding_model": "all-MiniLM-L6-v2",
+    "delivery": "Photon (Twilio WhatsApp + SMS fallback)"
+  }
+}

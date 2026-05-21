@@ -1,0 +1,13 @@
+{
+  "name": "neighborhood-concierge-messaging",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node photon_server.mjs",
+    "photon": "node photon_server.mjs"
+  },
+  "dependencies": {
+    "spectrum-ts": "^1.9.2"
+  }
+}

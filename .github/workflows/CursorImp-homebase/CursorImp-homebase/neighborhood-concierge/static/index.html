@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Seattle Event Market — Neighborhood Concierge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0c0f12;
+      --surface: #151a21;
+      --elevated: #1c2430;
+      --border: #2a3544;
+      --text: #f0f4f8;
+      --muted: #8fa3b8;
+      --mint: #5eead4;
+      --mint-dim: #2d6a5f;
+      --gold: #fbbf24;
+      --coral: #fb7185;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .hero {
+      padding: 2rem 1.5rem 1.5rem;
+      max-width: 1280px;
+      margin: 0 auto;
+      border-bottom: 1px solid var(--border);
+    }
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .hero h1 em {
+      font-style: normal;
+      color: var(--mint);
+    }
+    .hero p { margin: 0.5rem 0 0; color: var(--muted); max-width: 520px; }
+    .photon-card {
+      background: linear-gradient(135deg, var(--mint-dim), #1a2e38);
+      border: 1px solid var(--mint-dim);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      min-width: 260px;
+    }
+    .photon-card strong { color: var(--mint); font-size: 1.1rem; }
+    .photon-card small { display: block; margin-top: 0.35rem; color: var(--muted); font-size: 0.8rem; }
+    .toolbar {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: rgba(12, 15, 18, 0.92);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap input {
+      width: 100%;
+      padding: 0.65rem 1rem 0.65rem 2.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    .search-wrap::before {
+      content: "⌕";
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .chip {
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .chip:hover { border-color: var(--mint); color: var(--text); }
+    .chip.active {
+      background: var(--mint);
+      color: #0c0f12;
+      border-color: var(--mint);
+      font-weight: 600;
+    }
+    .chip .n { opacity: 0.75; margin-left: 0.25rem; }
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 4rem;
+    }
+    .market-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .listing {
+      background: var(--elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .listing:hover {
+      transform: translateY(-2px);
+      border-color: var(--mint-dim);
+    }
+    .listing-banner {
+      height: 72px;
+      background: linear-gradient(120deg, var(--mint-dim) 0%, #243b55 50%, #1a1a2e 100%);
+      display: flex;
+      align-items: flex-end;
+      padding: 0.6rem 0.85rem;
+      gap: 0.4rem;
+    }
+    .cat-pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.35);
+      color: var(--mint);
+    }
+    .src-pill {
+      font-size: 0.68rem;
+      padding: 0.2rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+    }
+    .listing-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
+    .listing h3 {
+      margin: 0 0 0.4rem;
+      font-size: 1rem;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+    .listing .when, .listing .where {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin: 0.15rem 0;
+    }
+    .listing .foot {
+      margin-top: auto;
+      padding-top: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .listing a {
+      color: var(--mint);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .listing a:hover { text-decoration: underline; }
+    .price-tag { font-size: 0.8rem; color: var(--gold); }
+    .side-panel {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 800px) { .side-panel { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+    .panel h2 {
+      margin: 0 0 0.75rem;
+      font-size: 0.95rem;
+      color: var(--mint);
+    }
+    .panel p { margin: 0 0 0.75rem; font-size: 0.88rem; color: var(--muted); }
+    input, button, textarea {
+      font: inherit;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      padding: 0.55rem 0.75rem;
+      width: 100%;
+    }
+    button.btn-primary {
+      background: var(--mint);
+      color: #0c0f12;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button.btn-primary:hover { filter: brightness(1.05); }
+    .chat-box {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 0.75rem;
+      max-height: 160px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3rem;
+      color: var(--muted);
+    }
+    .flow {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .flow span {
+      padding: 0.25rem 0.5rem;
+      background: var(--surface);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    .flow .arrow { border: none; background: none; padding: 0; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <h1>Seattle <em>Event Market</em></h1>
+        <p>Local happenings from Eventbrite, Meetup & Luma — curated for your neighborhood. Text the Concierge for personalized picks.</p>
+        <div class="flow">
+          <span>Ingest</span><span class="arrow">→</span>
+          <span>Vector DB</span><span class="arrow">→</span>
+          <span>Marketplace</span><span class="arrow">→</span>
+          <span>Photon iMessage</span>
+        </div>
+      </div>
+      <div class="photon-card">
+        <small>Your Concierge line (Photon)</small>
+        <strong id="photonLine">+1 628 264 7704</strong>
+        <small>People text this number · RCS/SMS fallback automatic</small>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <input id="search" placeholder="Search Capitol Hill, jazz, free food…" />
+    </div>
+    <div class="chips" id="categoryChips"></div>
+  </div>
+
+  <main>
+    <div class="market-grid" id="grid">
+      <div class="empty">Loading local events…</div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel">
+        <h2>Get picks on your phone</h2>
+        <p>Messages send <strong>from</strong> <span id="photonLine2">+16282647704</span> via Photon iMessage. Enter <em>your</em> phone to receive a digest.</p>
+        <label style="font-size:0.8rem;color:var(--muted)">Your phone (recipient)</label>
+        <input id="recipientPhone" placeholder="+1XXXXXXXXXX" />
+        <button class="btn-primary" id="btnSendDigest">Send today's digest via Photon</button>
+        <p id="sendStatus" style="font-size:0.8rem;margin-top:0.5rem"></p>
+      </div>
+      <div class="panel">
+        <h2>Ask the Concierge</h2>
+        <p>Same brain as iMessage — answers only from stored Seattle events.</p>
+        <div class="chat-box" id="chatLog"></div>
+        <input id="chatPhone" placeholder="Your phone" style="margin-bottom:0.4rem" />
+        <input id="chatMsg" placeholder="Any tech events this week?" />
+        <button class="btn-primary" id="btnChat">Ask</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const CAT_COLORS = {
+      music: "#a78bfa", food: "#fb923c", tech: "#38bdf8",
+      sports: "#4ade80", arts: "#f472b6", community: "#fbbf24", other: "#94a3b8",
+    };
+    let activeCategory = "";
+    let categories = [];
+
+    async function api(path, opts) {
+      const r = await fetch(path, opts);
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+      return r.json();
+    }
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "Date TBA";
+      try {
+        return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      } catch { return iso; }
+    }
+
+    function renderCard(e) {
+      const cat = e.category || "other";
+      const color = CAT_COLORS[cat] || CAT_COLORS.other;
+      const price = e.price != null ? `$${e.price}` : "Free / TBA";
+      const src = e.source_label || (e.source || "").replace(/^./, (c) => c.toUpperCase());
+      return `
+        <article class="listing">
+          <div class="listing-banner" style="background:linear-gradient(120deg, ${color}33, var(--elevated))">
+            <span class="cat-pill">${esc(cat)}</span>
+            <span class="src-pill">${esc(src)}</span>
+          </div>
+          <div class="listing-body">
+            <h3>${esc(e.title)}</h3>
+            <div class="when">${fmtDate(e.date_start)}</div>
+            <div class="where">${esc(e.location?.address || "Seattle area")}</div>
+            <div class="foot">
+              <span class="price-tag">${price}</span>
+              ${e.url ? `<a href="${e.url}" target="_blank" rel="noopener">View →</a>` : ""}
+            </div>
+          </div>
+        </article>`;
+    }
+
+    function renderGrid(events) {
+      const grid = document.getElementById("grid");
+      if (!events.length) {
+        grid.innerHTML = `<div class="empty">No events in this category. Try another chip or run ingestion.</div>`;
+        return;
+      }
+      grid.innerHTML = events.map(renderCard).join("");
+    }
+
+    function renderChips() {
+      const el = document.getElementById("categoryChips");
+      const allCount = categories.reduce((a, c) => a + c.count, 0);
+      let html = `<button class="chip ${activeCategory === "" ? "active" : ""}" data-cat="">All<span class="n">${allCount}</span></button>`;
+      for (const c of categories) {
+        html += `<button class="chip ${activeCategory === c.id ? "active" : ""}" data-cat="${c.id}">${esc(c.id)}<span class="n">${c.count}</span></button>`;
+      }
+      el.innerHTML = html;
+      el.querySelectorAll(".chip").forEach((btn) => {
+        btn.onclick = () => {
+          activeCategory = btn.dataset.cat || "";
+          el.querySelectorAll(".chip").forEach((b) => b.classList.toggle("active", b === btn));
+          loadEvents();
+        };
+      });
+    }
+
+    async function loadEvents() {
+      const q = document.getElementById("search").value.trim();
+      let url = `/api/events?limit=60&exclude=reddit`;
+      if (q) url += `&q=${encodeURIComponent(q)}`;
+      if (activeCategory) url += `&category=${encodeURIComponent(activeCategory)}`;
+      const data = await api(url);
+      renderGrid(data.events);
+    }
+
+    async function init() {
+      const status = await api("/api/status");
+      const line = status.photon_line || "+16282647704";
+      document.getElementById("photonLine").textContent = line.replace(/(\+1)(\d{3})(\d{3})(\d{4})/, "$1 ($2) $3-$4");
+      document.getElementById("photonLine2").textContent = line;
+
+      const cats = await api("/api/categories");
+      categories = cats.categories || [];
+      renderChips();
+      await loadEvents();
+    }
+
+    document.getElementById("search").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") loadEvents();
+    });
+
+    document.getElementById("btnSendDigest").onclick = async () => {
+      const phone = document.getElementById("recipientPhone").value.trim();
+      const st = document.getElementById("sendStatus");
+      if (!phone) { st.textContent = "Enter your phone number first."; return; }
+      st.textContent = "Sending via Photon…";
+      try {
+        const r = await api(`/api/digest/send?phone=${encodeURIComponent(phone)}`, { method: "POST" });
+        st.textContent = `Sent! (${r.events} events in digest)`;
+        st.style.color = "var(--mint)";
+      } catch (e) {
+        st.textContent = e.message;
+        st.style.color = "var(--coral)";
+      }
+    };
+
+    document.getElementById("btnChat").onclick = async () => {
+      const phone = document.getElementById("chatPhone").value.trim() || document.getElementById("recipientPhone").value.trim();
+      const msg = document.getElementById("chatMsg").value.trim();
+      const log = document.getElementById("chatLog");
+      if (!msg) return;
+      log.innerHTML += `<div><strong>You:</strong> ${esc(msg)}</div>`;
+      try {
+        const r = await api("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: phone || "+10000000000", message: msg }),
+        });
+        log.innerHTML += `<div style="color:var(--mint);margin:0.5rem 0"><strong>Concierge:</strong> ${esc(r.reply)}</div>`;
+        log.scrollTop = log.scrollHeight;
+      } catch (e) {
+        log.innerHTML += `<div style="color:var(--coral)">${esc(e.message)}</div>`;
+      }
+    };
+
+    init().catch((e) => {
+      document.getElementById("grid").innerHTML = `<div class="empty">Start server: python main.py — ${esc(e.message)}</div>`;
+    });
+  </script>
+</body>
+</html>
